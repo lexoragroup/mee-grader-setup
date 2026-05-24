@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MEE Grader Setup — Claude Project Walkthrough</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body, #root { height: 100%; }
+  body { background: #0e0d0c; font-family: ui-sans-serif, system-ui, sans-serif; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #3a3530; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+const steps = [
+  { id: 1, label: "Step 1", title: "Create a Claude Project" },
+  { id: 2, label: "Step 2", title: "Add Project Instructions" },
+  { id: 3, label: "Step 3", title: "Upload Knowledge Files" },
+  { id: 4, label: "Step 4", title: "Set Up Your Error Log" },
+  { id: 5, label: "Step 5", title: "How to Use It" },
+];
+
+const Sidebar = ({ activeProject = null, highlightNew = false }) => (
+  <div style={{
+    width: 220, background: "#171717", height: "100%", display: "flex",
+    flexDirection: "column", borderRight: "1px solid #2a2a2a", flexShrink: 0,
+  }}>
+    <div style={{ padding: "16px 14px 8px", display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ width: 26, height: 26, background: "#cc785c", borderRadius: 6,
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "#fff" }}>✦</div>
+      <span style={{ color: "#e8e0d5", fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em" }}>Claude</span>
+    </div>
+    <div style={{ padding: "4px 10px 8px" }}>
+      <div style={{ width: "100%", background: "transparent", border: "1px solid #2e2e2e",
+        borderRadius: 8, color: "#a09890", padding: "7px 12px", fontSize: 12,
+        display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 15 }}>+</span> New chat
+      </div>
+    </div>
+    <div style={{ padding: "10px 14px 4px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ color: "#6b6560", fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>Projects</span>
+        <span style={{
+          background: highlightNew ? "#cc785c" : "transparent",
+          border: highlightNew ? "none" : "1px solid #3a3a3a",
+          borderRadius: 5, color: highlightNew ? "#fff" : "#7a7268",
+          padding: "2px 7px", fontSize: 10, cursor: "pointer",
+          boxShadow: highlightNew ? "0 0 0 3px rgba(204,120,92,0.25)" : "none"
+        }}>+ New</span>
+      </div>
+    </div>
+    <div style={{ padding: "2px 8px" }}>
+      {activeProject && (
+        <div style={{ background: "#262220", borderRadius: 8, padding: "7px 10px",
+          display: "flex", alignItems: "center", gap: 7, marginBottom: 2,
+          border: "1px solid #3d3530" }}>
+          <span style={{ fontSize: 13 }}>📝</span>
+          <span style={{ color: "#e8e0d5", fontSize: 12, fontWeight: 500 }}>{activeProject}</span>
+        </div>
+      )}
+      <div style={{ padding: "5px 10px", display: "flex", alignItems: "center", gap: 7 }}>
+        <span style={{ fontSize: 12 }}>📁</span>
+        <span style={{ color: "#6b6560", fontSize: 12 }}>Bar Exam Notes</span>
+      </div>
+    </div>
+    <div style={{ padding: "10px 14px 4px", marginTop: 6 }}>
+      <span style={{ color: "#6b6560", fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>Recents</span>
+    </div>
+    <div style={{ padding: "2px 8px" }}>
+      {["ConLaw essay feedback", "MBE Contracts Q&A", "Hearsay exceptions..."].map((t, i) => (
+        <div key={i} style={{ padding: "5px 10px" }}>
+          <span style={{ color: "#6b6560", fontSize: 12 }}>{t}</span>
+        </div>
+      ))}
+    </div>
+    <div style={{ marginTop: "auto", padding: "10px 10px", borderTop: "1px solid #222",
+      display: "flex", alignItems: "center", gap: 7 }}>
+      <div style={{ width: 26, height: 26, borderRadius: "50%", background: "#3d3530",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 11, color: "#cc785c", fontWeight: 700 }}>R</div>
+      <span style={{ color: "#7a7268", fontSize: 12 }}>Your Lawyer Bestie</span>
+    </div>
+  </div>
+);
+
+const Step1 = () => (
+  <div style={{ display: "flex", height: "100%", position: "relative" }}>
+    <Sidebar highlightNew={true} />
+    <div style={{ flex: 1, background: "#1c1917", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)",
+        display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10, backdropFilter: "blur(2px)" }}>
+        <div style={{ background: "#242220", border: "1px solid #3d3530", borderRadius: 14,
+          padding: "26px 30px", width: 360, boxShadow: "0 24px 60px rgba(0,0,0,0.6)" }}>
+          <h3 style={{ color: "#e8e0d5", fontSize: 16, fontWeight: 600, margin: "0 0 6px", letterSpacing: "-0.02em" }}>New Project</h3>
+          <p style={{ color: "#7a7268", fontSize: 12, margin: "0 0 18px", lineHeight: 1.5 }}>
+            Projects keep your instructions and files in one place across conversations.
+          </p>
+          <div style={{ color: "#a09890", fontSize: 11, fontWeight: 600, marginBottom: 5, letterSpacing: "0.04em", textTransform: "uppercase" }}>Project Name</div>
+          <div style={{ background: "#1a1816", border: "2px solid #cc785c", borderRadius: 8,
+            padding: "9px 13px", color: "#e8e0d5", fontSize: 13, marginBottom: 13,
+            display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span>MEE Grader</span>
+            <span style={{ width: 2, height: 15, background: "#cc785c", animation: "blink 1s infinite", display: "inline-block" }} />
+          </div>
+          <div style={{ color: "#a09890", fontSize: 11, fontWeight: 600, marginBottom: 5, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+            Description <span style={{ color: "#5a5450", fontWeight: 400, textTransform: "none", letterSpacing: 0, fontSize: 11 }}>(optional — skip this)</span>
+          </div>
+          <div style={{ background: "#1a1816", border: "1px solid #2e2e2e", borderRadius: 8,
+            padding: "9px 13px", color: "#4a4440", fontSize: 12, marginBottom: 20 }}>Add a description...</div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <div style={{ background: "transparent", border: "1px solid #3a3a3a", borderRadius: 8,
+              color: "#7a7268", padding: "8px 16px", fontSize: 12, cursor: "pointer" }}>Cancel</div>
+            <div style={{ background: "#cc785c", border: "none", borderRadius: 8,
+              color: "#fff", padding: "8px 16px", fontSize: 12, fontWeight: 600,
+              cursor: "pointer", boxShadow: "0 2px 12px rgba(204,120,92,0.4)" }}>Create project</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const Step2 = () => (
+  <div style={{ display: "flex", height: "100%", position: "relative" }}>
+    <Sidebar activeProject="MEE Grader" />
+    <div style={{ flex: 1, background: "#1c1917", display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "16px 22px 0", borderBottom: "1px solid #242220" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <span style={{ fontSize: 18 }}>📝</span>
+          <span style={{ color: "#e8e0d5", fontSize: 16, fontWeight: 600, letterSpacing: "-0.02em" }}>MEE Grader</span>
+        </div>
+      </div>
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        <div style={{ width: 280, borderRight: "1px solid #222", padding: "16px", overflowY: "auto" }}>
+          <p style={{ color: "#7a7268", fontSize: 11, margin: "0 0 14px", lineHeight: 1.5 }}>
+            Instructions and files apply to every conversation in this project.
+          </p>
+          <div style={{ background: "#1a1816", border: "2px solid #cc785c", borderRadius: 10,
+            padding: "12px", marginBottom: 10, boxShadow: "0 0 0 4px rgba(204,120,92,0.12)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
+              <span style={{ color: "#a09890", fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>Project Instructions</span>
+              <span style={{ background: "#cc785c", color: "#fff", fontSize: 9, fontWeight: 700,
+                borderRadius: 4, padding: "2px 6px", letterSpacing: "0.04em" }}>PASTE HERE</span>
+            </div>
+            <div style={{ color: "#5a5450", fontSize: 11, fontStyle: "italic", lineHeight: 1.5 }}>
+              Click to add instructions Claude follows in every conversation...
+            </div>
+          </div>
+          <div style={{ background: "#1e1c1a", border: "1px solid #2a2a2a", borderRadius: 10, padding: "12px" }}>
+            <span style={{ color: "#6b6560", fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Files & Knowledge</span>
+            <div style={{ color: "#5a5450", fontSize: 11 }}>No files added yet</div>
+          </div>
+        </div>
+        <div style={{ flex: 1, padding: "16px 20px", overflowY: "auto" }}>
+          <div style={{ background: "#1e1c1a", border: "2px solid #cc785c", borderRadius: 12,
+            padding: "16px 18px", boxShadow: "0 0 0 4px rgba(204,120,92,0.1)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 12 }}>
+              <span style={{ color: "#cc785c", fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>✦ Editing Instructions</span>
+            </div>
+            <div style={{ fontFamily: "'Fira Code', 'Courier New', monospace", fontSize: 11, color: "#a09890", lineHeight: 1.7 }}>
+              <span style={{ color: "#7cb99a" }}>You are a private MEE essay grader</span> for a UBE bar exam retaker. You grade on a{" "}
+              <span style={{ color: "#cc785c", fontWeight: 600 }}>1–6 scale</span> calibrated to a{" "}
+              <span style={{ color: "#cc785c", fontWeight: 600 }}>270 UBE passing score</span>. You never soften scores. You never round up.{" "}
+              <span style={{ color: "#e8c46a", fontStyle: "italic" }}>A 3 is a 3.</span>
+              <br /><br />
+              At the start of every new conversation, ask three questions:<br />
+              <span style={{ color: "#8ab4d4" }}>1. What jurisdiction are you in?</span><br />
+              <span style={{ color: "#8ab4d4" }}>2. What subject area is this essay?</span><br />
+              <span style={{ color: "#8ab4d4" }}>3. Was this a timed attempt?</span>
+              <br /><br />
+              <span style={{ color: "#6b6560" }}>Wait for all three answers before proceeding...</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14, gap: 7 }}>
+              <div style={{ background: "transparent", border: "1px solid #3a3a3a", borderRadius: 7,
+                color: "#7a7268", padding: "6px 14px", fontSize: 11, cursor: "pointer" }}>Cancel</div>
+              <div style={{ background: "#cc785c", border: "none", borderRadius: 7,
+                color: "#fff", padding: "6px 14px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Save</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const fileList = [
+  { name: "MEE_UBE_OPE_Answers.pdf", size: "2.4 MB", status: "done" },
+  { name: "MagicSheets_BlackLetter.pdf", size: "1.8 MB", status: "done" },
+  { name: "NCBE_MEE_Analysis.pdf", size: "3.1 MB", status: "uploading", pct: 60 },
+  { name: "UBE_Issue_Spotting_Checklist.txt", size: "84 KB", status: "queued" },
+];
+
+const Step3 = () => (
+  <div style={{ display: "flex", height: "100%", position: "relative" }}>
+    <Sidebar activeProject="MEE Grader" />
+    <div style={{ flex: 1, background: "#1c1917", display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "16px 22px 0", borderBottom: "1px solid #242220" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <span style={{ fontSize: 18 }}>📝</span>
+          <span style={{ color: "#e8e0d5", fontSize: 16, fontWeight: 600 }}>MEE Grader</span>
+        </div>
+      </div>
+      <div style={{ flex: 1, padding: "18px 22px", overflowY: "auto" }}>
+        <div style={{ background: "#1e1c1a", border: "1px solid #2e2a27", borderRadius: 10,
+          padding: "10px 14px", marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ color: "#6b6560", fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>Project Instructions</span>
+            <span style={{ color: "#7cb99a", fontSize: 10, fontWeight: 600 }}>✓ Saved</span>
+          </div>
+          <div style={{ color: "#6b6560", fontSize: 11, marginTop: 3, fontStyle: "italic" }}>MEE essay grader · 1–6 UBE scale · 270 calibrated...</div>
+        </div>
+        <div style={{ background: "#1e1c1a", border: "2px solid #cc785c", borderRadius: 12,
+          padding: "16px 18px", boxShadow: "0 0 0 4px rgba(204,120,92,0.1)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <span style={{ color: "#a09890", fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Files & Knowledge</span>
+            <div style={{ background: "#cc785c", border: "none", borderRadius: 7,
+              color: "#fff", padding: "5px 12px", fontSize: 11, fontWeight: 600,
+              cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>↑ Add content</div>
+          </div>
+          <div style={{ background: "#272220", borderRadius: 7, padding: "7px 10px", marginBottom: 12,
+            display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ fontSize: 11 }}>ℹ️</span>
+            <span style={{ color: "#7a7268", fontSize: 10 }}>Supported: <strong style={{ color: "#a09890" }}>PDF, .docx, .txt</strong> · Multiple files allowed on Claude Pro</span>
+          </div>
+          {fileList.map((f, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
+              background: "#161412", borderRadius: 8, marginBottom: 5,
+              border: f.status === "uploading" ? "1px solid #cc785c" : "1px solid #242220" }}>
+              <span style={{ fontSize: 14 }}>📄</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ color: "#c8c0b8", fontSize: 11, fontWeight: 500 }}>{f.name}</div>
+                <div style={{ color: "#5a5450", fontSize: 10 }}>{f.size}</div>
+              </div>
+              {f.status === "done" && <span style={{ color: "#7cb99a", fontSize: 12, fontWeight: 700 }}>✓</span>}
+              {f.status === "uploading" && (
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 50, height: 3, background: "#2a2520", borderRadius: 2 }}>
+                    <div style={{ width: `${f.pct}%`, height: "100%", background: "#cc785c", borderRadius: 2 }} />
+                  </div>
+                  <span style={{ color: "#cc785c", fontSize: 10 }}>{f.pct}%</span>
+                </div>
+              )}
+              {f.status === "queued" && <span style={{ color: "#5a5450", fontSize: 10 }}>Queued</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const Step4 = () => (
+  <div style={{ display: "flex", height: "100%", position: "relative" }}>
+    <Sidebar activeProject="MEE Grader" />
+    <div style={{ flex: 1, background: "#1c1917", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ padding: "12px 20px", borderBottom: "1px solid #222", display: "flex", alignItems: "center", gap: 7 }}>
+        <span style={{ fontSize: 14 }}>📝</span>
+        <span style={{ color: "#a09890", fontSize: 12 }}>MEE Grader</span>
+        <span style={{ color: "#3a3530", fontSize: 12 }}>›</span>
+        <span style={{ color: "#7a7268", fontSize: 12 }}>Contracts essay · Session 4</span>
+      </div>
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 32px" }}>
+        <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+          <div style={{ width: 26, height: 26, background: "#cc785c", borderRadius: 6,
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0, marginTop: 2, color: "#fff" }}>✦</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ color: "#7a7268", fontSize: 11, marginBottom: 5 }}>Claude · MEE Grader</div>
+            <div style={{ color: "#c8c0b8", fontSize: 12, lineHeight: 1.7, marginBottom: 12 }}>
+              Your Contracts essay comes in at <strong style={{ color: "#e8e0d5" }}>3.5/6</strong> — Borderline. Solid issue spotting on offer/acceptance and consideration, but your application went conclusory after you spotted the UCC/common law threshold question.
+            </div>
+            <div style={{ background: "#161412", border: "2px solid #cc785c", borderRadius: 10,
+              padding: "14px 16px", fontFamily: "'Fira Code', 'Courier New', monospace",
+              fontSize: 10.5, lineHeight: 1.85, boxShadow: "0 0 0 4px rgba(204,120,92,0.1)" }}>
+              <div style={{ color: "#cc785c", fontWeight: 700, marginBottom: 7, fontSize: 10, letterSpacing: "0.06em" }}>━━ SESSION SUMMARY ━━━━━━━━━━━━━━━━━━</div>
+              {[
+                ["Date:", "May 24, 2026"],
+                ["Subject:", "Contracts (UCC Article 2 crossover)"],
+                ["Score:", "3.5/6"],
+                ["Status:", "Borderline (3.5–4.1)"],
+                ["Issues missed:", "Battle of the forms (§2-207), implied warranty of merchantability"],
+                ["Rules wrong:", "Common law mirror image rule stated without UCC exception"],
+                ["Application weakness:", "Spotted UCC/CL threshold, never resolved which applied"],
+                ["Priority fix:", "When goods + services both present, resolve UCC threshold first"],
+              ].map(([label, val], i) => (
+                <div key={i}><span style={{ color: "#6b6560" }}>{label}</span> <span style={{ color: i === 2 ? "#e8c46a" : i === 3 ? "#e8c46a" : "#a09890", fontWeight: i === 2 ? 700 : 400 }}>{val}</span></div>
+              ))}
+            </div>
+            <div style={{ marginTop: 10, background: "#272220", borderRadius: 8, padding: "8px 12px",
+              display: "flex", alignItems: "center", gap: 7, border: "1px dashed #3d3530" }}>
+              <span style={{ fontSize: 12 }}>📋</span>
+              <span style={{ color: "#a09890", fontSize: 11 }}>Copy this block into your <strong>MEE Error Log</strong> before closing this chat.</span>
+              <div style={{ marginLeft: "auto", background: "#cc785c", border: "none", borderRadius: 6,
+                color: "#fff", padding: "3px 10px", fontSize: 10, fontWeight: 600, cursor: "pointer" }}>Copy</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const Step5 = () => (
+  <div style={{ display: "flex", height: "100%", position: "relative" }}>
+    <Sidebar activeProject="MEE Grader" />
+    <div style={{ flex: 1, background: "#1c1917", display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "12px 20px", borderBottom: "1px solid #222", display: "flex", alignItems: "center", gap: 7 }}>
+        <span style={{ fontSize: 14 }}>📝</span>
+        <span style={{ color: "#a09890", fontSize: 12 }}>MEE Grader</span>
+        <span style={{ color: "#3a3530", fontSize: 12 }}>›</span>
+        <span style={{ color: "#7a7268", fontSize: 12 }}>New conversation</span>
+      </div>
+      <div style={{ flex: 1, overflowY: "auto", padding: "18px 32px" }}>
+        <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+          <div style={{ width: 26, height: 26, background: "#cc785c", borderRadius: 6,
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0, marginTop: 2, color: "#fff" }}>✦</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ color: "#7a7268", fontSize: 11, marginBottom: 5 }}>Claude · MEE Grader</div>
+            <div style={{ color: "#c8c0b8", fontSize: 12, lineHeight: 1.7 }}>
+              Ready to grade. Before we start, I need three things:
+              <div style={{ margin: "8px 0 0", display: "flex", flexDirection: "column", gap: 5 }}>
+                {[
+                  ["1", "What jurisdiction are you in?", "(e.g., DC, NY, TX)"],
+                  ["2", "What subject area is this essay?", "(e.g., Contracts, Torts, Con Law)"],
+                  ["3", "Was this a timed attempt?", "(30 min UBE standard, or untimed?)"],
+                ].map(([num, q, hint], i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 7,
+                    background: "#1e1c1a", borderRadius: 7, padding: "7px 10px", border: "1px solid #2a2520" }}>
+                    <span style={{ color: "#cc785c", fontWeight: 700, fontSize: 12, minWidth: 14 }}>{num}.</span>
+                    <div>
+                      <span style={{ color: "#c8c0b8", fontSize: 12 }}>{q} </span>
+                      <span style={{ color: "#5a5450", fontSize: 11 }}>{hint}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 10, marginBottom: 16, justifyContent: "flex-end" }}>
+          <div style={{ maxWidth: "68%", background: "#272220", borderRadius: 10,
+            padding: "10px 14px", border: "1px solid #3a3530" }}>
+            <div style={{ color: "#7a7268", fontSize: 11, marginBottom: 3, textAlign: "right" }}>You</div>
+            <div style={{ color: "#c8c0b8", fontSize: 12, lineHeight: 1.6 }}>
+              DC bar. Contracts. Timed — 30 minutes.<br />
+              <em style={{ color: "#7a7268", fontSize: 11 }}>[essay pasted below]</em><br />
+              <span style={{ color: "#5a5450", fontSize: 11 }}>The plaintiff, a merchant, entered into a written agreement with defendant on June 1 for the sale of 500 widgets at $10 each. Defendant later claimed the parties modified the deal orally...</span>
+            </div>
+          </div>
+          <div style={{ width: 26, height: 26, borderRadius: "50%", background: "#3d3530",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 11, color: "#cc785c", fontWeight: 700, flexShrink: 0, marginTop: 2 }}>R</div>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <div style={{ width: 26, height: 26, background: "#cc785c", borderRadius: 6,
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0, marginTop: 2, color: "#fff" }}>✦</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ color: "#7a7268", fontSize: 11, marginBottom: 5 }}>Claude · MEE Grader</div>
+            <div style={{ background: "#1e1c1a", border: "1px solid #2a2520", borderRadius: 10,
+              padding: "12px 14px", fontFamily: "'Fira Code', 'Courier New', monospace",
+              fontSize: 10.5, lineHeight: 1.8, color: "#a09890" }}>
+              <div style={{ color: "#7cb99a", fontWeight: 700, marginBottom: 5 }}>ISSUE SPOTTING</div>
+              <div><span style={{ color: "#7cb99a" }}>✓ Correctly identified:</span> Written modification rule (UCC §2-209), Statute of Frauds applicability, merchant-to-merchant context</div>
+              <div style={{ marginTop: 4 }}><span style={{ color: "#e8a0a0" }}>✗ Missed:</span> <strong>Battle of the forms (§2-207)</strong> — written agreement + subsequent conduct raises this; never addressed</div>
+              <div style={{ color: "#5a5450", marginTop: 7 }}>RULE STATEMENTS · APPLICATION ANALYSIS · OVERALL SCORE →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{ padding: "10px 24px", borderTop: "1px solid #222" }}>
+        <div style={{ background: "#1e1c1a", borderRadius: 10, padding: "9px 14px",
+          border: "1px solid #2e2a27", display: "flex", alignItems: "center", gap: 7 }}>
+          <span style={{ color: "#4a4440", fontSize: 12, flex: 1 }}>Open a new chat for your next essay...</span>
+          <span style={{ color: "#3a3530", fontSize: 16 }}>↑</span>
+        </div>
+        <div style={{ textAlign: "center", marginTop: 6, color: "#4a4440", fontSize: 10 }}>⚠️ One essay per chat. Always open a new conversation for each attempt.</div>
+      </div>
+    </div>
+  </div>
+);
+
+const stepComponents = [Step1, Step2, Step3, Step4, Step5];
+
+function App() {
+  const [active, setActive] = useState(0);
+  const StepView = stepComponents[active];
+  return (
+    <div style={{ fontFamily: "ui-sans-serif, system-ui, sans-serif", background: "#0e0d0c",
+      minHeight: "100vh", display: "flex", flexDirection: "column", padding: "20px" }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+        {steps.map((s, i) => (
+          <button key={s.id} onClick={() => setActive(i)} style={{
+            background: active === i ? "#cc785c" : "#1e1c1a",
+            border: active === i ? "none" : "1px solid #2e2a27",
+            borderRadius: 8, color: active === i ? "#fff" : "#7a7268",
+            padding: "7px 14px", fontSize: 11, fontWeight: active === i ? 700 : 400,
+            cursor: "pointer", transition: "all 0.15s",
+          }}>
+            {s.label}: {s.title}
+          </button>
+        ))}
+      </div>
+      <div style={{ flex: 1, background: "#1c1917", borderRadius: 12,
+        border: "1px solid #2e2a27", overflow: "hidden", height: 500,
+        display: "flex", flexDirection: "column",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.5)", position: "relative" }}>
+        <div style={{ background: "#141210", padding: "9px 14px", display: "flex",
+          alignItems: "center", gap: 5, borderBottom: "1px solid #222", flexShrink: 0 }}>
+          <div style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff5f57" }} />
+          <div style={{ width: 11, height: 11, borderRadius: "50%", background: "#febc2e" }} />
+          <div style={{ width: 11, height: 11, borderRadius: "50%", background: "#28c840" }} />
+          <div style={{ flex: 1, textAlign: "center", color: "#4a4440", fontSize: 11 }}>claude.ai</div>
+        </div>
+        <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+          <StepView />
+        </div>
+      </div>
+      <div style={{ textAlign: "center", marginTop: 12 }}>
+        <span style={{ color: "#cc785c", fontWeight: 700, fontSize: 12 }}>{steps[active].label}:</span>{" "}
+        <span style={{ color: "#7a7268", fontSize: 12 }}>{steps[active].title}</span>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
